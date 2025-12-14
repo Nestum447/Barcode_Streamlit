@@ -1,39 +1,33 @@
 import streamlit as st
-import cv2
-import numpy as np
-from pyzbar.pyzbar import decode
-from PIL import Image
+from streamlit.components.v1 import html
 
-st.set_page_config(
-    page_title="Scanner con Cámara",
-    page_icon="📷",
-    layout="centered"
-)
+st.set_page_config(page_title="Scanner ZXing", page_icon="📷")
 
 st.title("📷 Lector de Códigos de Barras")
-st.caption("Escaneo usando cámara en Streamlit")
+st.caption("Compatible con Streamlit Cloud")
 
-camera_image = st.camera_input("Escanear código")
+html("""
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+</head>
+<body>
+  <video id="video" width="300"></video>
+  <p id="result"></p>
 
-if camera_image:
-    # Convertir imagen
-    image = Image.open(camera_image)
-    image_np = np.array(image)
-    image_cv = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+  <script>
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    const resultElem = document.getElementById('result');
 
-    barcodes = decode(image_cv)
-
-    st.image(image, caption="Imagen capturada", use_container_width=True)
-
-    if barcodes:
-        st.success("Código detectado ✔")
-
-        for barcode in barcodes:
-            data = barcode.data.decode("utf-8")
-            code_type = barcode.type
-
-            st.markdown("### 📊 Resultado")
-            st.write(f"**Tipo:** {code_type}")
-            st.write(f"**Contenido:** {data}")
-    else:
-        st.warning("No se detectó ningún código")
+    codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+      if (result) {
+        resultElem.innerHTML = 
+          "<b>Tipo:</b> " + result.format + "<br>" +
+          "<b>Contenido:</b> " + result.text;
+      }
+    });
+  </script>
+</body>
+</html>
+""", height=400)
