@@ -4,80 +4,81 @@ from streamlit.components.v1 import html
 st.set_page_config(page_title="Barcode Scanner", page_icon="📷")
 
 st.title("📷 Lector de Códigos de Barras")
-st.write("Al detectar un código, el teléfono vibrará 📳")
+st.write("Pulsa el botón y apunta al código")
 
-html(
-"""
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+# 🔒 Evita re-render del componente
+if "scanner_started" not in st.session_state:
+    st.session_state.scanner_started = False
 
-  <style>
-    video {
-      width: 100%;
-      border-radius: 12px;
-      border: 3px solid #4CAF50;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
-</head>
+if not st.session_state.scanner_started:
+    if st.button("▶️ Iniciar escaneo"):
+        st.session_state.scanner_started = True
+        st.experimental_rerun()
+else:
+    html(
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+      <style>
+        video {
+          width: 100%;
+          border-radius: 12px;
+          border: 3px solid #4CAF50;
+        }
+        #status {
+          margin-top: 10px;
+          font-size: 18px;
+          font-weight: bold;
+        }
+      </style>
+    </head>
 
-<body>
+    <body>
+      <video id="video" autoplay muted playsinline></video>
+      <div id="status">🔍 Escaneando…</div>
 
-<video id="video" autoplay muted playsinline></video>
-<div id="status">📷 Inicializando cámara…</div>
+      <script>
+        let codeReader;
+        const video = document.getElementById("video");
+        const status = document.getElementById("status");
 
-<script>
-  const status = document.getElementById("status");
-  const video = document.getElementById("video");
+        async function startScanner() {
+          try {
+            codeReader = new ZXing.BrowserMultiFormatReader();
 
-  const codeReader = new ZXing.BrowserMultiFormatReader();
+            const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+            const backCamera = devices.find(d =>
+              d.label.toLowerCase().includes("back") ||
+              d.label.toLowerCase().includes("rear")
+            ) || devices[0];
 
-  async function startScanner() {
-    try {
-      const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+            codeReader.decodeFromVideoDevice(
+              backCamera.deviceId,
+              video,
+              (result, err) => {
+                if (result) {
+                  if (navigator.vibrate) navigator.vibrate(200);
 
-      const backCamera = devices.find(d =>
-        d.label.toLowerCase().includes("back") ||
-        d.label.toLowerCase().includes("rear")
-      ) || devices[0];
+                  status.innerHTML =
+                    "✅ <b>Tipo:</b> " + result.format + "<br>" +
+                    "🔢 <b>Código:</b> " + result.text;
 
-      status.innerText = "🔍 Escaneando…";
-
-      codeReader.decodeFromVideoDevice(
-        backCamera.deviceId,
-        video,
-        (result, err) => {
-          if (result) {
-            // 📳 VIBRAR
-            if (navigator.vibrate) {
-              navigator.vibrate([200, 100, 200]); // patrón
-            }
-
-            status.innerHTML =
-              "✅ <b>Tipo:</b> " + result.format + "<br>" +
-              "🔢 <b>Código:</b> " + result.text;
-
-            codeReader.reset(); // detener escaneo
+                  codeReader.reset();
+                }
+              }
+            );
+          } catch (e) {
+            status.innerText = "❌ Error cámara: " + e;
           }
         }
-      );
-    } catch (e) {
-      status.innerText = "❌ Error cámara: " + e;
-    }
-  }
 
-  startScanner();
-</script>
-
-</body>
-</html>
-""",
-height=500
-)
+        startScanner();
+      </script>
+    </body>
+    </html>
+    """,
+    height=500
+    )
