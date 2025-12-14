@@ -6,14 +6,13 @@ st.set_page_config(page_title="Barcode Scanner", page_icon="📷")
 st.title("📷 Lector de Códigos de Barras")
 st.write("Pulsa el botón y apunta al código")
 
-# 🔒 Evita re-render del componente
 if "scanner_started" not in st.session_state:
     st.session_state.scanner_started = False
 
 if not st.session_state.scanner_started:
     if st.button("▶️ Iniciar escaneo"):
         st.session_state.scanner_started = True
-        st.experimental_rerun()
+        st.rerun()
 else:
     html(
     """
@@ -41,14 +40,12 @@ else:
       <div id="status">🔍 Escaneando…</div>
 
       <script>
-        let codeReader;
         const video = document.getElementById("video");
         const status = document.getElementById("status");
+        const codeReader = new ZXing.BrowserMultiFormatReader();
 
         async function startScanner() {
           try {
-            codeReader = new ZXing.BrowserMultiFormatReader();
-
             const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
             const backCamera = devices.find(d =>
               d.label.toLowerCase().includes("back") ||
