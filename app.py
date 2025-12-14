@@ -4,59 +4,43 @@ from streamlit.components.v1 import html
 st.set_page_config(page_title="Scanner Barcode", page_icon="📷")
 
 st.title("📷 Lector de Códigos de Barras")
-st.info("Apunta la cámara al código. Funciona mejor con buena luz.")
+st.success("Compatible con Streamlit Cloud")
 
-html(
-"""
+html("""
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/@zxing/library@latest"></script>
-  <style>
-    video {
-      width: 100%;
-      border-radius: 10px;
-      border: 2px solid #4CAF50;
-    }
-    #result {
-      font-size: 18px;
-      margin-top: 10px;
-      color: green;
-      font-weight: bold;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
-<video id="video" muted autoplay playsinline></video>
-<div id="result">Esperando código...</div>
+<video id="video" autoplay muted playsinline></video>
+<p id="result">Esperando código...</p>
 
 <script>
-  const codeReader = new ZXing.BrowserMultiFormatReader();
-  const videoElement = document.getElementById('video');
-  const resultElement = document.getElementById('result');
+const codeReader = new ZXing.BrowserMultiFormatReader();
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      videoElement.srcObject = stream;
-      videoElement.play();
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+  .then(stream => {
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    video.play();
 
-      codeReader.decodeFromVideoElement(videoElement, (result, err) => {
-        if (result) {
-          resultElement.innerHTML =
-            "📦 Tipo: " + result.format + "<br>" +
-            "🔢 Código: " + result.text;
-        }
-      });
-    })
-    .catch(err => {
-      resultElement.innerHTML = "❌ Error de cámara: " + err;
+    codeReader.decodeFromVideoElement(video, (result, err) => {
+      if (result) {
+        document.getElementById('result').innerHTML =
+          "<b>Tipo:</b> " + result.format + "<br>" +
+          "<b>Código:</b> " + result.text;
+      }
     });
+  })
+  .catch(err => {
+    document.getElementById('result').innerText =
+      "Error cámara: " + err;
+  });
 </script>
 
 </body>
 </html>
-""",
-height=450
-)
+""", height=420)
